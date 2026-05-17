@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(cc-lms-srs-author)",
+      "Skill(cc-lms-srs-author:*)"
+    ]
+  }
+}
