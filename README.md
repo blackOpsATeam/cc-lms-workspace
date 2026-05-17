@@ -1,6 +1,6 @@
 # CC-LMS Workspace
 
-Shared workspace for the CC-LMS coaching center management platform. Two tracks (A: existing codebase being refined, B: fresh build) share one source of truth for SRS, design system, API contracts, briefs, and Claude Code tooling.
+Workspace for the CC-LMS coaching center management platform. One codebase, one source of truth for SRS, design system, API contracts, briefs, and Claude Code tooling. Modules are refined → designed → contracted → built one at a time.
 
 ## For the manager
 
@@ -17,11 +17,11 @@ Tools you'll use:
 - **Claude.ai chat** (web/desktop) — strategy and planning conversations like this one
 - **GitHub** — PR reviews from the devs
 
-Open Claude Code at the workspace root for cross-track work (refining SRS, writing briefs, ADRs). Open it inside `track-a/` or `track-b/` when reviewing code in one specific track.
+Open Claude Code at the workspace root for docs/specs/brief work. Open it inside `codebases/cc-lms/` when reviewing or editing application code.
 
 ## For devs
 
-Work inside `track-a/` or `track-b/`. The root `CLAUDE.md` plus the per-track `CLAUDE.md` tell Claude Code about shared docs, skills, and agents. Don't duplicate context — read from `docs/` and `briefs/active/`.
+Application code lives in `codebases/cc-lms/` (its own git repo, nested inside this workspace). The workspace root `CLAUDE.md` plus `codebases/CLAUDE.md` tell Claude Code about shared docs, skills, and agents. Don't duplicate context — read from `docs/` and `briefs/active/`.
 
 ## The workflow
 
@@ -36,7 +36,7 @@ SRS  →  Design  →  API contract  →  Brief  →  Dev + Claude Code build  �
 2. Manager + Claude generate design specs in `docs/design/screens/<module>/`
 3. API contract drafted in `docs/api-contracts/<module>.md`
 4. `brief-author` subagent writes a brief into `briefs/active/`
-5. Dev opens Claude Code in their track folder, points it at the brief
+5. Dev opens Claude Code inside `codebases/cc-lms/`, points it at the brief
 6. Dev opens PR; manager reviews; merges
 
 ## Folder map
@@ -59,9 +59,12 @@ SRS  →  Design  →  API contract  →  Brief  →  Dev + Claude Code build  �
 │   ├── skills/                     # Project-specific skills
 │   ├── agents/                     # Subagent personas
 │   └── settings.json               # Permissions and config
-├── track-a/                        # Existing codebase (refine to DESIGN.md)
-└── track-b/                        # Fresh build (full Claude-driven workflow)
+└── codebases/
+    ├── CLAUDE.md                   # Code-level conventions (stack, schema, tests)
+    └── cc-lms/                     # The Next.js + NestJS + Prisma app (nested git repo)
 ```
+
+> A previously planned second codebase (legacy Track A) is paused / out of scope. See ADR-0005 (supersedes ADR-0001). If reintroduced later, it goes in a sibling folder under `codebases/` with its own `CLAUDE.md`.
 
 ## Quick start
 

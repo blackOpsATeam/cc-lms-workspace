@@ -1,8 +1,10 @@
 # ADR-0001: Two-track development strategy
 
-- **Status:** accepted
+- **Status:** superseded by ADR-0005 (2026-05-18)
 - **Date:** 2026-05-15
 - **Deciders:** Manager
+
+> ⚠️ This decision has been **superseded**. The project now runs as a single track (the fresh build, in `codebases/cc-lms/`); Track A is paused. See [ADR-0005](0005-single-track-track-b-only.md). The content below is preserved as historical record.
 
 ## Context
 
