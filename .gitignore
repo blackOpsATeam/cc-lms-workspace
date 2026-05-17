@@ -1,3 +1,9 @@
+# === Nested code repositories ===
+# The application code in codebases/ is its own git repo, tracked separately.
+# The workspace repo ignores the code, but keeps codebases/CLAUDE.md.
+codebases/*/
+!codebases/CLAUDE.md
+
 # Dependencies
 node_modules/
 .pnpm-store/
