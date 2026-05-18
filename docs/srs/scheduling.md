@@ -276,7 +276,7 @@ Two scheduled occurrences are in conflict if they share a time window (any overl
 | created_at | Timestamp | |
 | updated_at | Timestamp | |
 
-> **Multi-tenancy note:** ADR-0003 is pending. This SRS assumes single-tenant deployment. If ADR-0003 selects shared-schema multi-tenant, a `tenant_id` column must be added to `BatchRoutine`, `ScheduleEntry`, `ScheduleOverride`, and `Room`, and every query, conflict-detection scope, and unique index must be tenant-scoped. Same caveat as `auth.md` §4 and `class-context.md` §15.
+> **Multi-tenancy:** Per ADR-0003 (accepted, shared-schema), `BatchRoutine`, `ScheduleEntry`, `ScheduleOverride`, and `Room` each carry a `tenant_id` column (UUID, NOT NULL, FK → `Tenant.id`). Every query, conflict-detection scope, and unique index is tenant-scoped — including the "one non-ARCHIVED routine per batch" rule (partial unique index on `(tenant_id, batch_id) WHERE status != 'ARCHIVED'`) and the override uniqueness (`(tenant_id, schedule_entry_id, override_date)`). The Prisma middleware injects `tenant_id` from the JWT claim on every read and write.
 
 ## 9. API Contracts
 
@@ -385,7 +385,7 @@ For `OCCURRENCE` scope on `PUBLISHED`: the created `ScheduleOverride` row. For `
 
 - `400` — `INVALID_INPUT` or missing `scope` on a `PUBLISHED` routine
 - `403` — `FORBIDDEN` (caller is not Admin)
-- `404` — `ENTRY_NOT_FOUND` (returned in preference to 403 when the entry does not belong to the caller's institution, to avoid existence-leak; relevant once ADR-0003 lands)
+- `404` — `ENTRY_NOT_FOUND` (returned in preference to 403 when the entry does not belong to the caller's tenant, to avoid existence-leak per ADR-0003)
 - `409` — `CONFLICT_DETECTED` (response body lists conflicts) / `ROUTINE_REPLACED_CONCURRENTLY` (FUTURE-scope race)
 
 Satisfies: FR-SCH-018, FR-SCH-019.

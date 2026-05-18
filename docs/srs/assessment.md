@@ -323,7 +323,7 @@ The time interval during which a student may start and submit. Default: from `op
 | updated_at | Timestamp | |
 | | | Unique: `(assessment_id, student_id)` |
 
-> **Multi-tenancy note:** ADR-0003 is pending. This SRS assumes single-tenant; under multi-tenant, every table gets `tenant_id` and indexes are tenant-scoped. Same caveat as `auth.md` §4.
+> **Multi-tenancy:** Per ADR-0003 (accepted, shared-schema), `Assessment`, `AssessmentQuestion`, `AssessmentAttempt`, `AssessmentAnswer`, and `AssessmentResult` each carry a `tenant_id` column (UUID, NOT NULL, FK → `Tenant.id`). All uniqueness constraints are tenant-scoped: `(tenant_id, assessment_id, student_id, attempt_number)` on `AssessmentAttempt`; `(tenant_id, attempt_id, question_id)` on `AssessmentAnswer`; `(tenant_id, assessment_id, student_id)` on `AssessmentResult`. Performance summaries and batch comparisons are computed within a single tenant only.
 
 ## 9. API Contracts
 

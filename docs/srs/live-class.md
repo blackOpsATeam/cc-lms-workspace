@@ -265,7 +265,7 @@ A backend interface with concrete adapters per provider. The SRS treats `provide
 | payload_excerpt | text | First ~1 KB for diagnostics |
 | | | Unique on `(provider, provider_event_id)` to enforce idempotency |
 
-> **Multi-tenancy note:** ADR-0003 is pending. This SRS assumes single-tenant; under multi-tenant, every table gets a `tenant_id` column and the provider adapter must scope provider accounts per tenant. Same caveat as `auth.md` §4.
+> **Multi-tenancy:** Per ADR-0003 (accepted, shared-schema), `LiveSession`, `LiveParticipantEvent`, `LiveRecordingReference`, and `WebhookDeliveryLog` each carry a `tenant_id` column (UUID, NOT NULL, FK → `Tenant.id`). The partial unique index on `(schedule_entry_id, class_date) WHERE status != 'CANCELLED'` is scoped as `(tenant_id, schedule_entry_id, class_date)`. The provider adapter accepts a per-tenant provider account configuration (a tenant may use its own Zoom account); when not configured, the platform's shared account is used.
 
 ## 9. API Contracts
 

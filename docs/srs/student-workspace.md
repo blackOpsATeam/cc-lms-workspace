@@ -208,7 +208,7 @@ This module **owns no tables**. All data is read-through from upstream modules. 
 
 Because the module is stateless, no DDL is required for this SRS. Indexes and partial unique constraints needed for the underlying tables live in their owning module's SRS.
 
-> **Multi-tenancy note:** ADR-0003 is pending. This SRS assumes single-tenant; if multi-tenant, every upstream read must scope by `tenant_id` derived from the caller. Same caveat as `auth.md` §4.
+> **Multi-tenancy:** Per ADR-0003 (accepted, shared-schema). This module owns no tables, but every upstream read (Scheduling, Teacher Workspace, Live Class, Assessment, Class Context, File Asset) is tenant-scoped via the JWT `tenant_id` claim. The Student Workspace resolver passes the caller's `tenant_id` on every service call; an upstream service that receives a mismatched `tenant_id` returns `404` (existence-hiding).
 
 ## 9. API Contracts
 

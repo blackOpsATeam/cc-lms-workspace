@@ -256,7 +256,7 @@ This module owns `ClassInstruction` and `ClassResource`. The other entities in t
 - `TeacherAssignedClassView` — composed by calling Scheduling `GET /me/schedule` and merging with the calling teacher's own filters. Lives entirely in this module's controller / resolver layer.
 - `ClassAssessmentLinkView` — composed by calling Assessment Management's per-class assessment-link endpoint (`GET /assessments/by-class?schedule_entry_id=&class_date=`). Read-only.
 
-> **Multi-tenancy note:** ADR-0003 is pending. This SRS assumes single-tenant. If multi-tenant is chosen, `ClassInstruction` and `ClassResource` need a `tenant_id` column and indexes must be tenant-scoped. Same caveat as `auth.md` §4.
+> **Multi-tenancy:** Per ADR-0003 (accepted, shared-schema), `ClassInstruction` and `ClassResource` each carry a `tenant_id` column (UUID, NOT NULL, FK → `Tenant.id`). All ownership checks (`created_by = caller`) are implicitly tenant-scoped via the JWT claim. The Admin override path verifies the caller's `tenant_id` matches the target row's `tenant_id`; cross-tenant admin reach is rejected with `404`.
 
 ## 9. API Contracts
 

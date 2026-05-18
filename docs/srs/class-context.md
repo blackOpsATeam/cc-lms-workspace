@@ -26,7 +26,7 @@ Define the academic structure that every other CC-LMS module depends on: **Class
 - Teacher recruitment, payroll, leave — User Management / Payroll
 - Exam logic, evaluation, results — Assessment Management
 - Attendance capture — Attendance Management
-- Cross-tenant subject sharing (see ADR-0003 — pending)
+- Cross-tenant subject sharing — not in v1. Each tenant maintains its own subject catalog (per ADR-0003).
 
 ## 3. Actors
 
@@ -275,6 +275,8 @@ The operation of asking "given a batch_id, what is the effective subject list an
 | created_at | Timestamp | |
 | deactivated_at | Timestamp, nullable | Set when replaced |
 | | | Partial unique index: (batch_id, subject_id) WHERE status = 'ACTIVE' |
+
+> **Multi-tenancy:** Per ADR-0003 (accepted, shared-schema), every table in this module — `Class`, `Subject`, `ClassSubject`, `Batch`, `BatchSubjectOverride`, `BatchSubjectTeacher`, `StudentBatch` — carries a `tenant_id` column (UUID, NOT NULL, FK → `Tenant.id`). All uniqueness constraints are tenant-scoped: `(tenant_id, code)` on `Class` and `Subject`; `(tenant_id, class_id, subject_id)` on `ClassSubject`; `(tenant_id, class_id, name)` on `Batch`; `(tenant_id, batch_id, subject_id)` on `BatchSubjectOverride`; `(tenant_id, batch_id, subject_id) WHERE status = 'ACTIVE'` partial unique on `BatchSubjectTeacher`; `(tenant_id, student_id) WHERE left_at IS NULL` partial unique on `StudentBatch`. The resolution API (`GET /batches/{id}/context`) is tenant-scoped via the JWT claim; cross-tenant requests return `404` (existence-hiding).
 
 ### `StudentBatch`
 
@@ -852,7 +854,7 @@ Consumed by (downstream — listed for traceability):
 - Teacher expertise (which subjects a teacher is qualified for) is *not* enforced by data integrity in v1; Admin chooses appropriately. See OQ.
 - A student belongs to exactly one active batch at any time. Multi-batch students (e.g. specialty coaching) are not in v1.
 - Multi-system support (Coaching / National Institute / Private Tutor) is realised through configuration (defaults, naming, optional fields) rather than separate schemas — see OQ.
-- "Global subjects" means subjects available across classes within one institution. Cross-institution sharing depends on ADR-0003 (multi-tenancy).
+- "Global subjects" means subjects available across classes within one tenant. Cross-tenant sharing is not in v1 per ADR-0003.
 
 ## 16. Open Questions
 

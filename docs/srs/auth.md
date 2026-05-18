@@ -46,9 +46,9 @@ A server-acknowledged state tied to one issued access token + refresh token pair
 
 ### Access Token
 
-Short-lived signed JWT (default 24 h, configurable) carried in the `Authorization: Bearer` header. Claims: `user_id`, `role`, `session_id` (= `AuthSession.id`, used as the JWT `jti` for revocation lookup), `iat`, `exp`. Signature + expiry are verified statelessly; `session_id` is additionally checked against a revocation deny-list (see FR-AUTH-012).
+Short-lived signed JWT (default 24 h, configurable) carried in the `Authorization: Bearer` header. Claims: `user_id`, `tenant_id`, `role`, `session_id` (= `AuthSession.id`, used as the JWT `jti` for revocation lookup), `iat`, `exp`. Signature + expiry are verified statelessly; `session_id` is additionally checked against a revocation deny-list (see FR-AUTH-012); every downstream API guard cross-checks the JWT `tenant_id` against the resource's `tenant_id` and returns `404` on mismatch (existence-hiding) per ADR-0003.
 
-> **Multi-tenancy note:** ADR-0003 is pending. This SRS assumes a **single-tenant** deployment. If ADR-0003 selects multi-tenant, a `tenant_id` claim must be added and all downstream guards updated. Tracked as OQ.
+> **Multi-tenancy:** Per ADR-0003 (accepted, shared-schema), every domain table in this module — `User`, `AuthSession`, `PasswordResetToken`, `OtpChallenge`, `RolePolicy` — carries a `tenant_id` column (UUID, NOT NULL, FK → `Tenant.id`). Identifier uniqueness on `User.email` / `User.phone` is scoped per tenant (partial unique index on `(tenant_id, email)` and `(tenant_id, phone)`). Login resolves the user's tenant from the identifier; the `tenant_id` is captured in the issued token. Prisma middleware injects `tenant_id` on every query.
 
 ### Refresh Token
 
@@ -640,7 +640,7 @@ Satisfies: FR-AUTH-035. Called by User Management on deactivation.
 - Should `last_login_at` be exposed on the user's own profile (transparency) and on the Admin user-detail screen?
 - Lockout policy: per-account is specified, but do we *also* want per-IP throttling beyond the rate limit (e.g. soft-block an IP after N distinct-account failures)?
 - Token-revocation propagation: this SRS specifies a Redis-backed deny-list (FR-AUTH-012). Confirm with the manager that the operational cost of a Redis lookup on every authenticated request is acceptable, or whether shortening access-token TTL (e.g. 15 min) and accepting a small revocation window is preferred.
-- Multi-tenancy (ADR-0003): is CC-LMS single-tenant or multi-tenant? If multi-tenant, the JWT must carry `tenant_id` and every Auth check must scope by tenant. Blocks final JWT-claims shape.
+- ~~Multi-tenancy (ADR-0003)~~ — **resolved 2026-05-18:** ADR-0003 accepted Option B (shared-schema multi-tenant). JWT carries `tenant_id`; every Auth table has `tenant_id`; identifier uniqueness is per-tenant.
 - Sole-Admin lockout recovery: do we add an operational override (CLI tool, break-glass account) for the case where the only Admin is locked out, or is the 15-minute auto-unlock acceptable?
 - Role policy change mid-session: when `two_fa_required` flips from false → true for a role, should existing sessions for that role be immediately revoked, or are they allowed to live until their access token expires (current default)?
 - Should the `RolePolicy` table support per-role overrides for other auth parameters (lockout threshold, access-token TTL, OTP TTL), or are those only global config?
