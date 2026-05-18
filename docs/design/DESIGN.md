@@ -2,6 +2,8 @@
 
 A design system for a coaching center management platform serving the Bangladesh market. Built for Admin, Teacher, Student, and Accountant roles across mobile and desktop. Institutional, trustworthy, bilingual-ready.
 
+> **Revision note:** This version keeps the navy + amber brand identity and the full original depth. Section 14 has been upgraded from conceptual pattern guidance into a concrete, pixel-level component specification so the system is directly implementable without engineers guessing values. A shared interaction-state model (§14.0) was added so every component references one source of truth for rest / hover / focus / active / disabled behavior.
+
 ---
 
 ## 1. Product context
@@ -310,10 +312,11 @@ radius.full   9999px Pills, avatars, status badges
 ### Border widths
 - Default: 1px
 - Emphasis (selected, focused, brand-tinted): 1.5px
-- Avoid 2px+ — looks heavy and dated for institutional feel
+- Avoid 2px+ for structural/decorative borders — looks heavy and dated for institutional feel
+- **Exception:** the keyboard focus *ring* is 2px (it is an offset outline, not a structural border — see §14.0)
 
 ### Rule
-Status pills are always `radius.full`. Buttons and cards are `radius.md`. Modals are `radius.lg`. Avatars are `radius.full`. Don't deviate without a specific reason.
+Status pills are always `radius.full`. Buttons and cards are `radius.md`. Inputs are `radius.sm`. Modals are `radius.lg`. Avatars are `radius.full`. Don't deviate without a specific reason.
 
 ---
 
@@ -376,6 +379,8 @@ All motion respects `prefers-reduced-motion: reduce` and falls back to instant. 
 
 ### Rule
 Don't bounce. Don't spring. Don't elastic. Don't celebrate every interaction. The product handles money and children's education — gravity matters more than delight.
+
+**Specifically: components do not move on hover.** Hover communicates through color and background change, never through transform/lift. (This is the deliberate institutional adaptation — a consumer "card lifts on hover" pattern is rejected here. See §14.)
 
 ---
 
@@ -441,58 +446,419 @@ The same component renders differently for different roles. The design system su
 
 ---
 
-## 14. Pattern library (component-level guidance)
+## 14. Component specifications
 
-### Status Badge
-- Rounded pill, leading dot
-- 11px overline (uppercase, 0.08em letter-spacing)
-- Padded 4px vertical, 10px horizontal
-- Background + foreground from status palette family
-- One per row in tables, max 2 in cards
+The previous version of this section described patterns conceptually. This version specifies them — exact sizes, padding, radii, and interaction states — so a component can be built without guessing. Every value below resolves to a token from §3–§10; nothing here introduces a new primitive.
 
-### KPI Card
-- Comfortable density even in admin context (KPIs are scanned, not parsed)
-- Small label (11px overline, muted) above large number (display.md or .lg)
-- Optional trend indicator (small caret + delta) below
-- 24px padding, radius.lg
-- Never on `surface.canvas` — always `surface.raised` or `surface.sunken`
+**How to read this section.** Each component lists *anatomy* (its parts), *dimensions* (exact px, all 4px-grid aligned), *states* (referencing §14.0), and *rules* (the do/don't that keep it from drifting). Where a component has a comfortable and a compact form, both are given.
 
-### Queue Row (admissions, payment verification, evaluation)
-- Compact density (36px row height)
-- Avatar/initials → primary identifier → status badge → metadata → actions
-- Hover: `surface.sunken` background, no shadow change
-- Selected: `border.brand` left edge accent (2px), background unchanged
+### 14.0 Interaction states — the shared model
 
-### Class Occurrence Card
-- Subject + batch + time as primary triad
-- Delivery mode pill (ON_SITE / LIVE / HYBRID) below
-- Status badge for non-normal occurrences (UPDATED / OVERRIDDEN / CANCELLED)
-- Action row at bottom (Open / Join / View)
-- Comfortable density
-- `surface.raised` with `border.subtle`, radius.md
+Every interactive component supports the same five states. Components reference this model rather than redefining it.
 
-### Planner Widget (today's classes, upcoming exams)
-- Section heading (heading.sm) with count badge
-- Stacked rows or compact cards
-- Empty state if no items — never show blank container
-- Each row deep-links to source module
+```
+rest         Default. Token group at .rest.
+hover        Pointer devices only. Background/color shifts one step
+             (e.g. interactive.primary.rest → .hover). NO transform,
+             NO lift, NO shadow change. Transition: motion.fast.
+focus-visible 2px outline in border.focus, 2px offset, on keyboard
+             focus. Always visible. Never removed without replacement.
+active       Pressed. One step darker than hover (.active token).
+disabled     interactive.*.disabled background, text.disabled label,
+             cursor: not-allowed, no hover/active response, aria-disabled.
+```
 
-### Action Bar (role-aware)
-- Horizontal scroll on mobile, wrap on desktop
-- Each action: icon (20px) + label (body.sm, weight 500)
-- Highlighted action when timely (live class joinable, exam window open, overdue)
-- Hide entirely if no actions exist (don't show empty bar)
+Two optional states, used only where the component supports them:
+```
+selected/checked   Brand-tinted: border.brand, navy-50 (light) / navy-800
+                   (dark) fill, or interactive.primary fill for controls.
+loading            Inline 16px spinner replaces the label, or skeleton
+                   replaces content. Component stays its rest size.
+```
 
-### Empty States
-- Icon (32px, muted) + heading.sm + body.sm description + optional CTA
-- Centered, generous padding
-- Never blank space — always explain *why* it's empty
+**Rules**
+- All state transitions use `motion.fast` (150ms) with `motion.standard` easing, and collapse to instant under `prefers-reduced-motion`.
+- The focus ring is 2px — this is the one sanctioned exception to the "avoid 2px borders" rule (§8), because it is an offset outline, not a structural border.
+- Hover never moves an element. This is the deliberate institutional adaptation of the common consumer "lift on hover" pattern.
 
-### Loading States
-- Skeleton blocks matching final layout (not spinners)
-- Match the shape and size of the eventual content
-- Use `surface.sunken` for skeleton fill
-- Pulse animation respects reduced motion
+### 14.1 Buttons
+
+**Anatomy:** optional leading icon · label · optional trailing icon. Label is always present except for the icon-only variant.
+
+**Sizes** — `height / horizontal padding / label token / icon size`
+```
+sm   36px / 12px / body.sm  weight 500 / 16px   Compact contexts (admin, accountant, table row actions)
+md   40px / 16px / body.md  weight 500 / 16px   Default
+lg   48px / 20px / body.md  weight 500 / 20px   Primary CTA on mobile; matches the comfortable row height
+```
+Radius: `radius.md` (6px). Icon-only buttons are square: 36 / 40 / 48px. Internal gap between icon and label: 8px.
+
+**Variants**
+```
+Primary (navy)    bg interactive.primary.*  ·  text.inverse        The default action.
+Primary (amber)   bg interactive.accent.*   ·  text.inverse        The single most important CTA on a screen.
+Secondary         transparent · 1px border.default · text.primary  Hover: surface.sunken bg + border.strong.
+Ghost             transparent · no border · text.brand             Hover: surface.sunken bg.
+Destructive       transparent · 1px danger-500 · danger-700 text   Hover: danger-50 bg. Filled danger-500 only inside a confirm modal.
+```
+
+**States:** per §14.0. Disabled primary uses `interactive.primary.disabled` bg with `text.disabled`.
+
+**Rules**
+- Do place at most **one filled button** (navy or amber) per view section — it is the primary path.
+- Do reserve the amber variant for the highest-value action; **never two amber buttons on one screen** (echoes §2).
+- Do make primary form-submit buttons **full-width on mobile**.
+- Don't add a hover lift or shadow — color shift only (§10, §14.0).
+- Don't give buttons fixed pixel widths — Bangla labels must be free to expand (§12).
+- Icon-only buttons require an `aria-label` and a tooltip (§14.15).
+
+### 14.2 Text input & textarea
+
+**Anatomy:** label (above) · field · optional helper or error text (below). Optional leading/trailing icon or affix inside the field.
+
+**Dimensions**
+```
+height        sm 36px · md 40px (default) · lg 48px
+horizontal padding  12px
+font          body.md (14px); font.mono for code/transaction-ID fields
+radius        radius.sm (4px)   ← inputs are 4px, distinct from buttons at 6px
+label         body.sm weight 500 · text.secondary · 6px gap above field
+helper text   caption (12px) · text.muted · 4px gap below field
+error text    caption (12px) · danger-700
+textarea      same padding · min-height 80px · vertical resize only
+```
+
+**States**
+```
+rest      1px border.default
+hover     1px border.strong
+focus     1px border.focus + 2px focus ring (§14.0)
+filled    1px border.default (has a value)
+error     1px danger-500 + error text shown
+disabled  surface.sunken bg · text.disabled · border.subtle
+```
+Placeholder text uses `text.muted`. (See §15 for the phone-input affix pattern.)
+
+**Rules**
+- Do keep the label visible above the field — placeholder text is not a substitute for a label.
+- Do show error text as well as the red border (color is never the only signal — §18).
+- Don't use a fixed-width field where a Bangla value may appear (name, address).
+
+### 14.3 Select / dropdown
+
+**Anatomy:** input field (per §14.2) + trailing chevron-down icon 16px `text.muted`. Opens a menu.
+
+**Menu:** `surface.overlay` · `radius.md` · `shadow.md` · layer `z.dropdown`. Option rows 36px high, 12px horizontal padding, `body.md` label. Option hover: `surface.sunken`. Selected option: `text.brand` + trailing check icon 16px. Max menu height ~280px, then scroll.
+
+**Rules**
+- Do support type-to-filter for any select with more than ~8 options.
+- Do use a searchable variant for batch / class / subject pickers (these grow over time).
+- Don't nest selects more than one level — use a dedicated picker screen instead.
+
+### 14.4 Checkbox, radio & toggle
+
+These are three different controls. Don't substitute one for another.
+
+**Checkbox** — multi-select, table-row selection, "Read & Acknowledged".
+```
+box        18 × 18px · radius.sm · 1.5px border.default (unchecked)
+checked    interactive.primary.rest fill + 14px white check (Lucide)
+indeterminate  filled + white dash
+label      body.md · 8px gap · tap area padded to 44px on mobile
+```
+
+**Radio** — one-of-many.
+```
+ring       18 × 18px · circle · 1.5px border.default
+checked    1.5px border.brand + 8px inner dot interactive.primary.rest
+```
+
+**Toggle / switch** — a setting that takes effect immediately (notification preferences, feature on/off).
+```
+track  36 × 20px · radius.full
+knob   16px circle · 2px inset · white · shadow.xs · slides on motion.fast
+off    track neutral-300 (light) / neutral-600 (dark)
+on     track interactive.primary.rest
+```
+
+**Rules**
+- Do use a **checkbox** in forms and tables, a **toggle** only for immediately-applied settings.
+- Don't render a toggle as a circle the way a generic "preferences switch" might — a circular toggle reads as a checkbox here. Keep the pill track.
+- For the attendance Present/Absent/Late/Excused control, use the segmented control (§14.5), not a toggle.
+
+### 14.5 Tabs & segmented control
+
+**Underline tabs** — top-level grouping (Today / Upcoming / Previous; Day / Month; Draft / Published).
+```
+tab height    40px
+label         body.md weight 500 · 16px horizontal padding
+active        text.brand + 2px bottom bar in interactive.primary.rest
+inactive      text.muted · hover text.secondary
+baseline      1px border.subtle hairline runs full width under the tab row
+count badge   optional pill on a tab: neutral-100 bg · text.secondary · 18px tall · caption text
+```
+
+**Segmented control** — a compact set of mutually exclusive choices in a tight space.
+```
+container     surface.sunken · radius.md
+segment       equal width · height 32px (compact) / 36px (comfortable)
+selected      surface.raised fill + text.primary + shadow.xs
+unselected    text.muted
+```
+For attendance status entry, the segments adopt the **attendance status palette** (§5) so Present/Absent/Late/Excused are color-coded as the user toggles.
+
+**Rules**
+- Do use underline tabs for navigation between views, segmented controls for a setting within a view.
+- Don't exceed ~5 tabs — beyond that, use a select or a side menu.
+
+### 14.6 Status badge
+
+**Anatomy:** pill · leading dot · label.
+```
+shape    radius.full
+height   22px
+padding  4px vertical · 10px horizontal
+dot      6px circle, fill = the status foreground color
+label    overline (11px · 600 · uppercase · 0.08em letter-spacing)
+color    bg + fg from the correct §5 status family — always the paired set
+```
+
+**Rules**
+- Do pick from the domain family that matches the data (approval / attendance / payment / lifecycle).
+- Do limit to **one badge per table row, max two per card**.
+- Don't make a badge clickable — it is a label, not a control. If an action is needed, use a button.
+- Don't invent a foreground color (§5).
+
+### 14.7 KPI card
+
+**Anatomy:** small label · large value · optional trend indicator.
+```
+surface     surface.raised (never surface.canvas)
+radius      radius.lg (8px)
+padding     24px
+min-height  120px
+elevation   shadow.xs (light) / surface lightening (dark)
+label       overline (11px) · text.muted
+value       display.md (28px) weight 700 · text.primary · tabular if numeric
+trend       caption (12px) + 16px caret icon
+            up = success-700 · down = danger-700 · flat = text.muted
+```
+Density is always **comfortable**, even on admin surfaces — KPIs are scanned, not parsed.
+
+**Rules**
+- Do show a sign-correct trend (a rising due-amount is *bad* — use danger, not success, when "up" is negative for the user).
+- Don't place a status-palette background on the card; the card surface is `surface.raised`.
+
+### 14.8 Queue row
+
+For admissions, payment verification, and evaluation queues. **Compact** density.
+```
+height        36px
+padding       6px vertical · 12px horizontal · gutter 12px
+anatomy       28px avatar/initials → primary identifier (body.md 500)
+              + sub-label (caption · text.muted) → status badge
+              → metadata (body.sm · tabular) → action buttons (sm / icon)
+divider       1px border.subtle between rows
+hover         surface.sunken background (no shadow change)
+selected      2px border.brand left-edge accent · background unchanged
+```
+The whole row deep-links to the source workflow.
+
+**Rules**
+- Do keep one status badge per row (§14.6).
+- Do right-align numeric metadata and use tabular numerals.
+- Don't put more than ~2 action buttons inline — overflow into a "more" menu.
+
+### 14.9 Class occurrence card
+
+A single scheduled class, in teacher and student workspaces. **Comfortable** density.
+```
+surface     surface.raised · 1px border.subtle · radius.md
+padding     16px
+primary triad   subject (heading.sm) · batch (body.sm · text.secondary) · time (body.sm · tabular)
+delivery mode   small label badge (ON_SITE / LIVE / HYBRID) — neutral palette, not status palette
+status badge    top-right, only for non-normal occurrences (UPDATED / OVERRIDDEN / CANCELLED), lifecycle family
+action row      bottom, 1–3 sm buttons (Open / Join / View), 12px gap above
+```
+A **cancelled** card dims its content to `text.muted` but keeps the cancelled badge legible.
+
+**Rules**
+- Do use the delivery-mode label in the neutral palette — it is a category, not a status.
+- Don't hide a cancelled class — keep it visible with its badge (per SRS visibility rules).
+
+### 14.10 Planner widget
+
+A grouped list of time-oriented items (today's classes, upcoming exams, payment queue).
+```
+section heading   heading.sm + count badge
+items             stacked rows or compact cards · 8px gap
+empty state       mandatory (§14.18) — never a blank container
+overflow          "View all" link (body.sm · text.link) when the list exceeds ~5 items
+```
+Each row deep-links to its source module.
+
+### 14.11 Action bar
+
+A row of role-aware quick actions.
+```
+container   horizontal scroll on mobile · wrap on desktop · 8px gap
+action      min 44 × 44px tap target · 20px icon + label (body.sm · 500)
+            · 8px vertical / 12px horizontal padding · radius.md
+highlighted action   when an action is timely (live class joinable,
+            exam window open, payment overdue): amber-50 bg + amber-700
+            text + 1.5px amber border, or filled interactive.accent for
+            the strongest emphasis
+```
+
+**Rules**
+- Do hide the bar entirely when no actions exist — never render an empty bar (§ Dashboard rules).
+- Do highlight at most one action at a time.
+- Don't show an action for a workflow that does not exist in the current build.
+
+### 14.12 Data table
+
+The workhorse of admin and accountant surfaces. **Compact** default; a **comfortable** variant exists for lighter contexts.
+```
+row height    compact 36px (cell padding 6 × 12) · comfortable 48px (cell padding 12 × 16)
+header        surface.sunken bg · body.sm weight 600 · text.muted
+              · sticky (z.sticky) · 1px border.subtle bottom
+row divider   1px border.subtle  (no zebra striping, no vertical gridlines)
+hover         surface.sunken row background
+selected      2px border.brand left-edge accent
+numeric cols  tabular numerals · right-aligned
+status col    one status pill per row (§14.6)
+```
+Column widths are flexible for name / address / notice / Bangla fields (§12). Empty and loading states are required (§14.18, §14.19). Long tables paginate or infinite-scroll.
+
+**Rules**
+- Do keep separation with dividers, not fills — zebra striping fights the status palette.
+- Do freeze the header on scroll for any table taller than the viewport.
+- Don't right-align text columns; don't left-align numeric columns.
+
+### 14.13 Modal / dialog & bottom sheet
+
+**Desktop dialog**
+```
+surface     surface.overlay · radius.lg · shadow.xl · layer z.modal
+backdrop     neutral-950 at ~50% opacity · layer z.backdrop
+width        sm 400px · md 520px · lg 720px · max 92vw
+padding      24px
+header       heading.md + close icon-button (20px icon, top-right)
+body         body.md · scrolls internally if tall
+footer       right-aligned action row · 8px gap · secondary then primary
+             (primary rightmost) · destructive confirm uses filled danger-500
+motion       enter 300ms motion.entrance (fade + 4px rise) · exit 200ms motion.exit
+```
+
+**Mobile:** the same dialog renders as a **bottom sheet** — full width, `radius.lg` on the top corners only, slides up from the bottom. Optional drag handle.
+
+**Rules**
+- Do keep the primary action rightmost (desktop) / bottom (mobile sheet).
+- Don't stack modals — resolve one before opening another.
+
+### 14.14 Toast
+
+Transient feedback.
+```
+surface      surface.inverse, or surface.raised with a 3px colored left
+             border indicating severity
+radius       radius.md · shadow.lg · layer z.toast
+width        max 400px · padding 12 × 16
+content      leading status icon 20px · title (body.md · 500) · optional body.sm line
+dismiss      auto after 5s · CRITICAL severity is manual-dismiss only
+motion       slide + fade on motion.base
+stacking     bottom (mobile) / bottom-right (desktop) · 8px gap
+```
+
+**Rules**
+- Do reserve toasts for confirmations and recoverable errors; use an inline alert for anything the user must act on.
+- Don't put a critical, must-act message in an auto-dismissing toast.
+
+### 14.15 Tooltip
+
+A real component — **do not** rely on the native `title` attribute (inconsistent rendering, and unreachable on touch devices).
+```
+surface   surface.inverse bg · text.inverse
+text      caption (12px)
+shape     radius.sm · padding 6 × 8 · shadow.sm
+layer     z.tooltip (always on top)
+width     max 240px
+timing    300ms appear delay · instant dismiss · motion.fast fade
+```
+
+**Rules**
+- Do provide a tooltip for every icon-only button (§14.1).
+- Don't put essential information *only* in a tooltip — it is unreachable on touch.
+
+### 14.16 Navigation
+
+**Top bar** (all roles)
+```
+height    56px · surface.raised · 1px border.subtle bottom · layer z.fixed
+left      brand / logo
+center    primary nav links on desktop — body.md 500 · 40px tap height
+          · active = text.brand + indicator
+right     notification bell (with unread count badge) · theme toggle
+          · profile avatar dropdown (32px avatar · radius.full)
+```
+
+**Sidebar** (admin / accountant, desktop)
+```
+width        248px · surface.raised · 1px border.subtle right
+              · collapsible to a 64px icon rail
+section label  overline · text.muted
+nav item     40px height · 12px horizontal padding · 20px icon + body.md label · radius.md
+              rest text.secondary · hover surface.sunken
+              active = navy-50 (light) / navy-800 (dark) bg + text.brand
+                       + 2px left-edge accent in interactive.primary
+```
+
+**Mobile:** hamburger → drawer (slides from the left, `surface.raised`, `z.modal`, `motion.slow`), or a bottom tab bar (max 5 items, 56px height, 24px icon + caption label, active `text.brand`).
+
+### 14.17 Search
+
+**Inline search field** — the primary search pattern.
+```
+based on the text input (§14.2), sm or md size
+leading   magnifier icon 16px · text.muted
+trailing  clear (×) icon, shown only when the field has a value
+behavior  debounced input · partial match (required by the User Management module)
+```
+
+**Command palette** — *optional* enhancement for admin power users.
+```
+trigger   ⌘K / Ctrl+K
+surface   centered overlay modal · search input + grouped, keyboard-navigable results
+scope     optional — not required for student / teacher surfaces
+```
+
+**Rules**
+- Do make the inline search field the default; treat the command palette as additive, never the only way to search.
+
+### 14.18 Empty states
+
+Never a blank container — always explain why it is empty and what to do next.
+```
+layout    centered · 48px vertical padding
+icon      32px · text.muted
+heading   heading.sm · text.secondary
+body      body.sm · text.muted — explains why it is empty
+action    optional single button
+```
+
+### 14.19 Loading & skeleton states
+
+```
+skeleton   blocks that match the final layout's shape and size
+fill       surface.sunken
+radius     matches the eventual content
+animation  ~1.5s ease-in-out pulse · static under prefers-reduced-motion
+spinner    inline 16px only — for button-loading and small inline waits
+```
+
+**Rules**
+- Do prefer skeletons over spinners for content areas — they reduce layout shift.
+- Do load dashboard zones independently (per the Dashboard module) so one slow source does not block the page.
 
 ---
 
@@ -527,17 +893,23 @@ The product handles five payment methods (Cash, MFS, POS, Online, Bank). Each ge
 
 ## 16. What this design system rejects
 
-Decisions made deliberately, recorded so they don't drift:
+Decisions made deliberately, recorded so they don't drift. Each is paired with the practice to follow instead.
 
-- **No gradients.** Institutional means flat. Gradients read as marketing/consumer.
-- **No drop shadows on dark mode.** Use surface lightening instead.
-- **No purple.** Saved for nothing. Purple has become the visual cliché of AI/SaaS products — we differentiate by avoiding it.
-- **No pure black (`#000000`) for text.** Use `text.primary` (`#0F172A`). Pure black on white is harsh.
-- **No pure white (`#FFFFFF`) for canvas.** Use `surface.canvas` (`#F8FAFC`). Pure white tires eyes during long sessions.
-- **No emoji in UI.** Icons only. Emojis render inconsistently across platforms and read as casual.
-- **No animation longer than 500ms.** Anything longer feels broken or slow.
-- **No focus indicator removal.** Every interactive element shows `border.focus` ring on keyboard focus. Never `outline: none` without replacement.
-- **No status color as a brand color or vice-versa.** They live in separate palettes for a reason — don't cross them.
+| Don't | Do instead |
+|---|---|
+| No gradients — they read as marketing/consumer | Flat fills; institutional weight comes from color and type, not effects |
+| No drop shadows in dark mode | Use surface lightening for elevation (§9) |
+| No purple anywhere | Stay in the navy + amber + neutral system; purple is the AI/SaaS cliché we differentiate from |
+| No pure black (`#000000`) for text | Use `text.primary` (`#0F172A`) |
+| No pure white (`#FFFFFF`) for the canvas | Use `surface.canvas` (`#F8FAFC`) |
+| No emoji in UI | Lucide icons only (§11) |
+| No animation longer than 500ms | Stay within the §10 duration scale |
+| No `outline: none` without a replacement | Every interactive element shows `border.focus` on keyboard focus (§14.0) |
+| No status color used as a brand color, or vice-versa | Keep the two palettes separate (§2, §5) |
+| No hover lift / movement on components | Hover communicates through color and background only (§10, §14.0) |
+| No indigo as the primary color | Navy `#14315C` is the deliberate primary (§2) — indigo collides semantically and reads as generic SaaS |
+| No fixed-width buttons or tightly-sized containers | Let Bangla text wrap and expand (§12) |
+| No reliance on the native `title` tooltip | Use the real tooltip component (§14.15) |
 
 ---
 
@@ -555,13 +927,13 @@ Decisions made deliberately, recorded so they don't drift:
 
 - **WCAG AA contrast minimum** for all text/background combinations. Status colors verified in both themes.
 - **44 × 44px minimum touch target** on mobile, 32 × 32px on desktop.
-- **Focus rings always visible** on keyboard navigation.
+- **Focus rings always visible** on keyboard navigation (2px outline, `border.focus`, 2px offset — §14.0).
 - **Reduced motion respected** via media query.
 - **Bangla screen reader support** — `lang="bn"` attribute on Bangla content blocks.
-- **No information conveyed by color alone.** Status pills have text labels. Charts have patterns/labels in addition to color.
+- **No information conveyed by color alone.** Status pills have text labels. Charts have patterns/labels in addition to color. Form errors show text, not just a red border.
 
 ---
 
 ## End of design system
 
-The system is intentionally opinionated. When generating new screens or components, prefer this system's rules over generic SaaS conventions. When in doubt: choose institutional weight over playfulness, density over generous whitespace for admin/accountant surfaces, comfort over density for student/teacher surfaces, and semantic tokens over primitives in every case.
+The system is intentionally opinionated. When generating new screens or components, prefer this system's rules over generic SaaS conventions. When in doubt: choose institutional weight over playfulness, density over generous whitespace for admin/accountant surfaces, comfort over density for student/teacher surfaces, and semantic tokens over primitives in every case. Build components from the §14 specifications — they are the source of truth for sizing and state behavior.
